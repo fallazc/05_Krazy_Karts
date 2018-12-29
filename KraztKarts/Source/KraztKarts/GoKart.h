@@ -50,11 +50,20 @@ private:
 	float MaxDegreesPerSecond = 90;
 
 	// in kg/m
+	UPROPERTY(EditAnywhere)
 	float DragCoefficient = 16;
+
+	// Higher means more rolling resistance
+	UPROPERTY(EditAnywhere)
+	float RollingResistanceCoefficient = -0.015f;
 
 	void MoveForward(float Val);
 
 	void MoveRight(float Val);
 
-	FVector GetResistance();
+	FVector GetAirResistance();
+
+	FVector GetDrivingForce();
+
+	FVector GetRollingResistance();
 };
