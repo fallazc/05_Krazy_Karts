@@ -45,11 +45,11 @@ private:
 	UPROPERTY(EditAnywhere)
 	float MaxDrivingForce = 10000;
 
-	// Mass of the car (kg).
+	// Minimum radius of turning circle at full lock (m)
 	UPROPERTY(EditAnywhere)
-	float MaxDegreesPerSecond = 90;
+	float MinTurningRadius = 10;
 
-	// in kg/m
+	// Higher means more drag (kg/m)
 	UPROPERTY(EditAnywhere)
 	float DragCoefficient = 16;
 
