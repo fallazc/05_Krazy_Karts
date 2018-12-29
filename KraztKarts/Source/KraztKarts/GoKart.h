@@ -23,6 +23,8 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
+	void ApplyRotation(float DeltaTime);
+
 	void UpdateLocationFromVelocity(float DeltaTime);
 
 	// Called to bind functionality to input
@@ -33,6 +35,8 @@ private:
 
 	float Throttle;
 
+	float SteeringThrow;
+
 	// Mass of the car (kg).
 	UPROPERTY(EditAnywhere)
 	float Mass = 1000;
@@ -41,5 +45,11 @@ private:
 	UPROPERTY(EditAnywhere)
 	float MaxDrivingForce = 10000;
 
+	// Mass of the car (kg).
+	UPROPERTY(EditAnywhere)
+	float MaxDegreesPerSecond = 90;
+
 	void MoveForward(float Val);
+
+	void MoveRight(float Val);
 };
