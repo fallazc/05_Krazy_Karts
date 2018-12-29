@@ -49,7 +49,12 @@ private:
 	UPROPERTY(EditAnywhere)
 	float MaxDegreesPerSecond = 90;
 
+	// in kg/m
+	float DragCoefficient = 16;
+
 	void MoveForward(float Val);
 
 	void MoveRight(float Val);
+
+	FVector GetResistance();
 };
