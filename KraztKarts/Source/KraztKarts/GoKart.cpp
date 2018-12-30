@@ -5,6 +5,7 @@
 #include "DrawDebugHelpers.h"
 #include "Engine/World.h"
 #include "UnrealNetwork.h"
+#include "GameFramework/GameStateBase.h"
 
 // Sets default values
 AGoKart::AGoKart()
@@ -50,16 +51,30 @@ void AGoKart::Tick(float DeltaTime)
 
 	if (IsLocallyControlled())
 	{
-		FGoKartMove Move;
-		Move.DeltaTime = DeltaTime;
-		Move.SteeringThrow = SteeringThrow;
-		Move.Throttle = Throttle;
-		//Move.Time = ;
+		FGoKartMove Move = CreateMove(DeltaTime);
+
+		if (!HasAuthority())
+		{
+			UnacknowledgedMoves.Add(Move);
+			UE_LOG(LogTemp, Warning, TEXT("Queue length: %d"), UnacknowledgedMoves.Num());
+		}
+
 		Server_SendMove(Move);
 		SimulateMove(Move);
 	}
 
 	DrawDebugString(GetWorld(), FVector(0, 0, 100), GetEnumText(Role), this, FColor::Green, DeltaTime);
+}
+
+FGoKartMove AGoKart::CreateMove(float DeltaTime)
+{
+	FGoKartMove Move;
+	Move.DeltaTime = DeltaTime;
+	Move.SteeringThrow = SteeringThrow;
+	Move.Throttle = Throttle;
+	Move.Time = GetWorld()->GetGameState()->GetServerWorldTimeSeconds();
+
+	return Move;
 }
 
 void AGoKart::ApplyRotation(float DeltaTime, float SteeringThrow)
@@ -119,10 +134,25 @@ void AGoKart::SimulateMove(FGoKartMove Move)
 	UpdateLocationFromVelocity(Move.DeltaTime);
 }
 
+void AGoKart::ClearAcknowledgedMoves(FGoKartMove LastMove)
+{
+	TArray<FGoKartMove> NewMoves;
+	for (const FGoKartMove& Move : UnacknowledgedMoves)
+	{
+		if (Move.Time > LastMove.Time)
+		{
+			NewMoves.Add(Move);
+		}
+	}
+
+	UnacknowledgedMoves = NewMoves;
+}
+
 void AGoKart::OnRep_ServerState()
 {
 	SetActorTransform(ServerState.Transform);
 	Velocity = ServerState.Velocity;
+	ClearAcknowledgedMoves(ServerState.LastMove);
 }
 
 void AGoKart::MoveForward(float Val)

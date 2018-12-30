@@ -56,6 +56,8 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
+	FGoKartMove CreateMove(float DeltaTime);
+
 	void ApplyRotation(float DeltaTime, float SteeringThrow);
 
 	void UpdateLocationFromVelocity(float DeltaTime);
@@ -65,6 +67,8 @@ public:
 
 private:
 	void SimulateMove(FGoKartMove Move);
+
+	void ClearAcknowledgedMoves(FGoKartMove LastMove);
 
 	FVector Velocity;
 
@@ -112,4 +116,6 @@ private:
 	FVector GetDrivingForce(float Throttle);
 
 	FVector GetRollingResistance();
+
+	TArray<FGoKartMove> UnacknowledgedMoves;
 };
