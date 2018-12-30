@@ -64,14 +64,10 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 private:
-	UPROPERTY(Replicated)
 	FVector Velocity;
 
-	UPROPERTY(ReplicatedUsing= OnRep_ReplicatedTransform)
-	FTransform ReplicatedTransform;
-
 	UFUNCTION()
-	void OnRep_ReplicatedTransform();
+	void OnRep_ServerState();
 
 	UPROPERTY(Replicated)
 	float Throttle;
@@ -99,15 +95,15 @@ private:
 	UPROPERTY(EditAnywhere)
 	float RollingResistanceCoefficient = -0.015f;
 
+	UPROPERTY(ReplicatedUsing=OnRep_ServerState)
+	FGoKartState ServerState;
+
 	void MoveForward(float Val);
 
 	void MoveRight(float Val);
 
 	UFUNCTION(Server, Reliable, WithValidation)
-	void Server_MoveForward(float Val);
-
-	UFUNCTION(Server, Reliable, WithValidation)
-	void Server_MoveRight(float Val);
+	void Server_SendMove(FGoKartMove Move);
 
 	FVector GetAirResistance();
 
