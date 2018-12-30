@@ -31,6 +31,7 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 private:
+	UPROPERTY(Replicated)
 	FVector Velocity;
 
 	UPROPERTY(ReplicatedUsing= OnRep_ReplicatedTransform)
@@ -39,8 +40,10 @@ private:
 	UFUNCTION()
 	void OnRep_ReplicatedTransform();
 
+	UPROPERTY(Replicated)
 	float Throttle;
 
+	UPROPERTY(Replicated)
 	float SteeringThrow;
 
 	// Mass of the car (kg).
