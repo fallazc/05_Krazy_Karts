@@ -56,7 +56,7 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-	void ApplyRotation(float DeltaTime);
+	void ApplyRotation(float DeltaTime, float SteeringThrow);
 
 	void UpdateLocationFromVelocity(float DeltaTime);
 
@@ -64,6 +64,8 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 private:
+	void SimulateMove(FGoKartMove Move);
+
 	FVector Velocity;
 
 	UFUNCTION()
@@ -107,7 +109,7 @@ private:
 
 	FVector GetAirResistance();
 
-	FVector GetDrivingForce();
+	FVector GetDrivingForce(float Throttle);
 
 	FVector GetRollingResistance();
 };
