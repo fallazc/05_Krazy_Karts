@@ -66,9 +66,9 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 private:
-	void SimulateMove(FGoKartMove Move);
+	void SimulateMove(const FGoKartMove& Move);
 
-	void ClearAcknowledgedMoves(FGoKartMove LastMove);
+	void ClearAcknowledgedMoves(const FGoKartMove& LastMove);
 
 	FVector Velocity;
 
@@ -109,7 +109,7 @@ private:
 	void MoveRight(float Val);
 
 	UFUNCTION(Server, Reliable, WithValidation)
-	void Server_SendMove(FGoKartMove Move);
+	void Server_SendMove(const FGoKartMove& Move);
 
 	FVector GetAirResistance();
 

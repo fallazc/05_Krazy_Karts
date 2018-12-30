@@ -108,7 +108,7 @@ void AGoKart::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 	PlayerInputComponent->BindAxis("MoveRight", this, &AGoKart::MoveRight);
 }
 
-void AGoKart::Server_SendMove_Implementation(FGoKartMove Move)
+void AGoKart::Server_SendMove_Implementation(const FGoKartMove& Move)
 {
 	SimulateMove(Move);
 
@@ -117,12 +117,12 @@ void AGoKart::Server_SendMove_Implementation(FGoKartMove Move)
 	ServerState.Velocity = Velocity;
 }
 
-bool AGoKart::Server_SendMove_Validate(FGoKartMove Move)
+bool AGoKart::Server_SendMove_Validate(const FGoKartMove& Move)
 {
 	return true;
 }
 
-void AGoKart::SimulateMove(FGoKartMove Move)
+void AGoKart::SimulateMove(const FGoKartMove& Move)
 {
 	FVector Force = GetDrivingForce(Move.Throttle) + GetAirResistance() + GetRollingResistance();
 
@@ -134,7 +134,7 @@ void AGoKart::SimulateMove(FGoKartMove Move)
 	UpdateLocationFromVelocity(Move.DeltaTime);
 }
 
-void AGoKart::ClearAcknowledgedMoves(FGoKartMove LastMove)
+void AGoKart::ClearAcknowledgedMoves(const FGoKartMove& LastMove)
 {
 	TArray<FGoKartMove> NewMoves;
 	for (const FGoKartMove& Move : UnacknowledgedMoves)
@@ -153,6 +153,11 @@ void AGoKart::OnRep_ServerState()
 	SetActorTransform(ServerState.Transform);
 	Velocity = ServerState.Velocity;
 	ClearAcknowledgedMoves(ServerState.LastMove);
+
+	for (const FGoKartMove& Move : UnacknowledgedMoves)
+	{
+		SimulateMove(Move);
+	}
 }
 
 void AGoKart::MoveForward(float Val)
