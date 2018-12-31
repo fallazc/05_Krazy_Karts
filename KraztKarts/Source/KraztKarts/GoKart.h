@@ -4,25 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Pawn.h"
+#include "GoKartMovementComponent.h"
 #include "GoKart.generated.h"
-
-USTRUCT()
-struct FGoKartMove
-{
-	GENERATED_USTRUCT_BODY()
-
-	UPROPERTY()
-	float Throttle;
-
-	UPROPERTY()
-	float SteeringThrow;
-
-	UPROPERTY()
-	float DeltaTime;
-
-	UPROPERTY()
-	float Time;
-};
 
 USTRUCT()
 struct FGoKartState
@@ -56,53 +39,17 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-	FGoKartMove CreateMove(float DeltaTime);
-
-	void ApplyRotation(float DeltaTime, float SteeringThrow);
-
-	void UpdateLocationFromVelocity(float DeltaTime);
-
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 private:
-	void SimulateMove(const FGoKartMove& Move);
-
-	void ClearAcknowledgedMoves(const FGoKartMove& LastMove);
-
-	FVector Velocity;
-
-	UFUNCTION()
-	void OnRep_ServerState();
-
-	UPROPERTY(Replicated)
-	float Throttle;
-
-	UPROPERTY(Replicated)
-	float SteeringThrow;
-
-	// Mass of the car (kg).
-	UPROPERTY(EditAnywhere)
-	float Mass = 1000;
-
-	// The force applied to the car when the throttle is fully down (N).
-	UPROPERTY(EditAnywhere)
-	float MaxDrivingForce = 10000;
-
-	// Minimum radius of turning circle at full lock (m)
-	UPROPERTY(EditAnywhere)
-	float MinTurningRadius = 10;
-
-	// Higher means more drag (kg/m)
-	UPROPERTY(EditAnywhere)
-	float DragCoefficient = 16;
-
-	// Higher means more rolling resistance
-	UPROPERTY(EditAnywhere)
-	float RollingResistanceCoefficient = -0.015f;
-
-	UPROPERTY(ReplicatedUsing=OnRep_ServerState)
+	UPROPERTY(ReplicatedUsing = OnRep_ServerState)
 	FGoKartState ServerState;
+
+	TArray<FGoKartMove> UnacknowledgedMoves;
+
+private:
+	void ClearAcknowledgedMoves(const FGoKartMove& LastMove);
 
 	void MoveForward(float Val);
 
@@ -111,11 +58,9 @@ private:
 	UFUNCTION(Server, Reliable, WithValidation)
 	void Server_SendMove(const FGoKartMove& Move);
 
-	FVector GetAirResistance();
+	UFUNCTION()
+	void OnRep_ServerState();
 
-	FVector GetDrivingForce(float Throttle);
-
-	FVector GetRollingResistance();
-
-	TArray<FGoKartMove> UnacknowledgedMoves;
+	UPROPERTY(EditAnywhere)
+	UGoKartMovementComponent* MovementComponent;
 };
