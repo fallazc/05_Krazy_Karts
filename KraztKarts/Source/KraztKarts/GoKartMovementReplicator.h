@@ -47,6 +47,9 @@ private:
 	UPROPERTY()
 	UGoKartMovementComponent* MovementComponent;
 
+	UPROPERTY()
+	USceneComponent* MeshOffsetRoot;
+
 	float ClientTimeSinceUpdate = 0.f;
 
 	float CLientTimeBetweenLastUpdate = 0.f;
@@ -65,6 +68,9 @@ public:
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
+
+	UFUNCTION(BlueprintCallable)
+	void SetMeshOffsetRoot(USceneComponent* Root);
 
 private:
 	void ClearAcknowledgedMoves(const FGoKartMove& LastMove);

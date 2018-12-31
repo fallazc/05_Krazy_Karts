@@ -18,8 +18,13 @@ UGoKartMovementReplicator::UGoKartMovementReplicator()
 void UGoKartMovementReplicator::BeginPlay()
 {
 	Super::BeginPlay();
+	AActor* Owner = GetOwner();
+	MovementComponent = Owner->FindComponentByClass<UGoKartMovementComponent>();
+}
 
-	MovementComponent = GetOwner()->FindComponentByClass<UGoKartMovementComponent>();
+void UGoKartMovementReplicator::SetMeshOffsetRoot(USceneComponent* Root)
+{
+	MeshOffsetRoot = Root;
 }
 
 // Called every frame
@@ -112,8 +117,15 @@ void UGoKartMovementReplicator::SimulatedProxy_OnRep_ServerState()
 	{
 		CLientTimeBetweenLastUpdate = ClientTimeSinceUpdate;
 		ClientTimeSinceUpdate = 0;
-		ClientStartTransform = GetOwner()->GetActorTransform();
-		ClientStartVelocity = MovementComponent->GetVelocity();
+		if (MeshOffsetRoot)
+		{
+			ClientStartTransform.SetLocation(MeshOffsetRoot->GetComponentLocation());
+			ClientStartTransform.SetRotation(MeshOffsetRoot->GetComponentQuat());
+			ClientStartVelocity = MovementComponent->GetVelocity();
+
+			AActor* Owner = GetOwner();
+			Owner->SetActorTransform(ServerState.Transform);
+		}
 	}
 }
 
@@ -152,9 +164,12 @@ void UGoKartMovementReplicator::ClientTick(float DeltaTime)
 
 void UGoKartMovementReplicator::InterpolateLocation(const FHermiteCubicSpline &Spline, float LerpRatio)
 {
-	AActor* Owner = GetOwner();
-	FVector NewLocation = Spline.InterpSpline(LerpRatio);
-	Owner->SetActorLocation(NewLocation);
+	if (MeshOffsetRoot)
+	{
+		AActor* Owner = GetOwner();
+		FVector NewLocation = Spline.InterpSpline(LerpRatio);
+		MeshOffsetRoot->SetWorldLocation(NewLocation);
+	}
 }
 
 void UGoKartMovementReplicator::InterpolateVelocity(const FHermiteCubicSpline &Spline, float LerpRatio)
@@ -166,11 +181,14 @@ void UGoKartMovementReplicator::InterpolateVelocity(const FHermiteCubicSpline &S
 
 void UGoKartMovementReplicator::InterpolateRotation(float LerpRatio)
 {
-	AActor* Owner = GetOwner();
-	FQuat TargetRotation = ServerState.Transform.GetRotation();
-	FQuat StartRotation = ClientStartTransform.GetRotation();
-	FQuat NewRotation = FQuat::Slerp(StartRotation, TargetRotation, LerpRatio);
-	Owner->SetActorRotation(NewRotation);
+	if (MeshOffsetRoot)
+	{
+		AActor* Owner = GetOwner();
+		FQuat TargetRotation = ServerState.Transform.GetRotation();
+		FQuat StartRotation = ClientStartTransform.GetRotation();
+		FQuat NewRotation = FQuat::Slerp(StartRotation, TargetRotation, LerpRatio);
+		MeshOffsetRoot->SetWorldRotation(NewRotation);
+	}
 }
 
 FHermiteCubicSpline UGoKartMovementReplicator::CreateSpline()
