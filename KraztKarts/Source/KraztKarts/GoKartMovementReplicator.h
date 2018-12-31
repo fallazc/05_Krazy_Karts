@@ -7,20 +7,30 @@
 #include "GoKartMovementComponent.h"
 #include "GoKartMovementReplicator.generated.h"
 
-
 USTRUCT()
 struct FGoKartState
 {
 	GENERATED_USTRUCT_BODY()
 
-		UPROPERTY()
-		FTransform Transform;
+	UPROPERTY()
+	FTransform Transform;
 
 	UPROPERTY()
-		FVector Velocity;
+	FVector Velocity;
 
 	UPROPERTY()
-		FGoKartMove LastMove;
+	FGoKartMove LastMove;
+};
+
+struct FHermiteCubicSpline
+{
+	FVector StartLocation;
+	FVector StartDerivative;
+	FVector TargetLocation;
+	FVector TargetDerivative;
+
+	FVector InterpSpline(float LerpRatio) const;
+	FVector InterpDerivative(float LerpRatio) const;
 };
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
@@ -70,6 +80,16 @@ private:
 	void AutonomousProxy_OnRep_ServerState();
 
 	void ClientTick(float DeltaTime);
+
+	void InterpolateLocation(const FHermiteCubicSpline &Spline, float LerpRatio);
+
+	void InterpolateVelocity(const FHermiteCubicSpline &Spline, float LerpRatio);
+
+	void InterpolateRotation(float LerpRatio);
+
+	FHermiteCubicSpline CreateSpline();
+
+	float GetVelocityToDerivative();
 
 	void UpdateServerState(const FGoKartMove& Move);
 };
