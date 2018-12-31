@@ -43,6 +43,8 @@ private:
 
 	FTransform ClientStartTransform;
 
+	FVector ClientStartVelocity;
+
 public:
 	// Sets default values for this component's properties
 	UGoKartMovementReplicator();

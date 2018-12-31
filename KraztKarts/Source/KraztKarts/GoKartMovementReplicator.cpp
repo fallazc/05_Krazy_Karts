@@ -52,10 +52,14 @@ void UGoKartMovementReplicator::TickComponent(float DeltaTime, ELevelTick TickTy
 
 void UGoKartMovementReplicator::UpdateServerState(const FGoKartMove& Move)
 {
+
 	AActor* Owner = GetOwner();
-	ServerState.LastMove = Move;
-	ServerState.Transform = Owner->GetActorTransform();
-	ServerState.Velocity = MovementComponent->GetVelocity();
+	if (MovementComponent)
+	{
+		ServerState.LastMove = Move;
+		ServerState.Transform = Owner->GetActorTransform();
+		ServerState.Velocity = MovementComponent->GetVelocity();
+	}
 }
 
 void UGoKartMovementReplicator::Server_SendMove_Implementation(const FGoKartMove& Move)
@@ -104,9 +108,13 @@ void UGoKartMovementReplicator::OnRep_ServerState()
 
 void UGoKartMovementReplicator::SimulatedProxy_OnRep_ServerState()
 {
-	CLientTimeBetweenLastUpdate = ClientTimeSinceUpdate;
-	ClientTimeSinceUpdate = 0;
-	ClientStartTransform = GetOwner()->GetActorTransform();
+	if (MovementComponent)
+	{
+		CLientTimeBetweenLastUpdate = ClientTimeSinceUpdate;
+		ClientTimeSinceUpdate = 0;
+		ClientStartTransform = GetOwner()->GetActorTransform();
+		ClientStartVelocity = MovementComponent->GetVelocity();
+	}
 }
 
 void UGoKartMovementReplicator::AutonomousProxy_OnRep_ServerState()
@@ -131,15 +139,39 @@ void UGoKartMovementReplicator::AutonomousProxy_OnRep_ServerState()
 void UGoKartMovementReplicator::ClientTick(float DeltaTime)
 {
 	ClientTimeSinceUpdate += DeltaTime;
-	if (CLientTimeBetweenLastUpdate > KINDA_SMALL_NUMBER)
+	if ( (CLientTimeBetweenLastUpdate > KINDA_SMALL_NUMBER) && (MovementComponent))
 	{
 		AActor* Owner = GetOwner();
 
 		FVector TargetLocation = ServerState.Transform.GetLocation();
 		float LerpRatio = ClientTimeSinceUpdate / CLientTimeBetweenLastUpdate;
 		FVector StartLocation = ClientStartTransform.GetLocation();
-		FVector NewLocation = FMath::LerpStable(StartLocation, TargetLocation, LerpRatio);
+
+		// Velocity is in m/s but location is in cm so we have to multiply by
+		// 100 to convert between meters and centimeters
+		float VelocityToDerivate = CLientTimeBetweenLastUpdate * 100;
+		FVector StartDerivative = ClientStartVelocity * VelocityToDerivate;
+		FVector TargetDerivative = ServerState.Velocity * VelocityToDerivate;
+
+		FVector NewLocation = FMath::CubicInterp(
+			StartLocation,
+			StartDerivative,
+			TargetLocation,
+			TargetDerivative,
+			LerpRatio
+		);
 		Owner->SetActorLocation(NewLocation);
+
+		FVector NewDerivative = FMath::CubicInterpDerivative(
+			TargetLocation,
+			StartDerivative,
+			TargetLocation,
+			TargetDerivative,
+			LerpRatio
+		);
+
+		FVector NewVelocity = NewDerivative / VelocityToDerivate;
+		MovementComponent->SetVelocity(NewVelocity);
 
 		FQuat TargetRotation = ServerState.Transform.GetRotation();
 		FQuat StartRotation = ClientStartTransform.GetRotation();
