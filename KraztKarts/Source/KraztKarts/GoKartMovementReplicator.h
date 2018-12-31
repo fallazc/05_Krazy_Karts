@@ -50,6 +50,8 @@ private:
 	UPROPERTY()
 	USceneComponent* MeshOffsetRoot;
 
+	float ClientSimulatedTime = 0.f;
+
 	float ClientTimeSinceUpdate = 0.f;
 
 	float CLientTimeBetweenLastUpdate = 0.f;

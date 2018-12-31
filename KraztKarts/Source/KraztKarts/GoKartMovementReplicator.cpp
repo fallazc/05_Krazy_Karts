@@ -2,6 +2,8 @@
 
 #include "GoKartMovementReplicator.h"
 #include "GameFramework/Actor.h"
+#include "GameFramework/GameStateBase.h"
+#include "Engine/World.h"
 #include "UnrealNetwork.h"
 
 // Sets default values for this component's properties
@@ -72,6 +74,7 @@ void UGoKartMovementReplicator::Server_SendMove_Implementation(const FGoKartMove
 	AActor* Owner = GetOwner();
 	if (Owner && MovementComponent)
 	{
+		ClientSimulatedTime += Move.DeltaTime;
 		MovementComponent->SimulateMove(Move);
 		UpdateServerState(Move);
 	}
@@ -79,7 +82,22 @@ void UGoKartMovementReplicator::Server_SendMove_Implementation(const FGoKartMove
 
 bool UGoKartMovementReplicator::Server_SendMove_Validate(const FGoKartMove& Move)
 {
-	return true;
+	float ProposedTime = ClientSimulatedTime + Move.DeltaTime;
+	float WorldTime = GetWorld()->GetGameState()->GetServerWorldTimeSeconds();
+	bool ClientRunningAhead = (ProposedTime > WorldTime);
+	if (ClientRunningAhead)
+	{
+		UE_LOG(LogTemp, Error, TEXT("Client is running too fast"));
+		return false;
+	}
+
+	bool MoveIsValid = Move.IsValid();
+	if (!MoveIsValid)
+	{
+		UE_LOG(LogTemp, Error, TEXT("Received invalid move."));
+	}
+
+	return MoveIsValid;
 }
 
 void UGoKartMovementReplicator::ClearAcknowledgedMoves(const FGoKartMove& LastMove)
