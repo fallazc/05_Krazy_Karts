@@ -37,7 +37,8 @@ private:
 	UPROPERTY()
 	UGoKartMovementComponent* MovementComponent;
 
-public:	
+	void UpdateServerState(const FGoKartMove& Move);
+public:
 	// Sets default values for this component's properties
 	UGoKartMovementReplicator();
 

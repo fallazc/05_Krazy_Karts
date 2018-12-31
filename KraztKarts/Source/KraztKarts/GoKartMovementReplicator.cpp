@@ -14,7 +14,6 @@ UGoKartMovementReplicator::UGoKartMovementReplicator()
 	// ...
 }
 
-
 // Called when the game starts
 void UGoKartMovementReplicator::BeginPlay()
 {
@@ -23,36 +22,41 @@ void UGoKartMovementReplicator::BeginPlay()
 	MovementComponent = GetOwner()->FindComponentByClass<UGoKartMovementComponent>();
 }
 
-
 // Called every frame
 void UGoKartMovementReplicator::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
 	AActor* Owner = GetOwner();
-	if (Owner)
+	if (Owner && MovementComponent)
 	{
-		if (Owner->Role == ROLE_AutonomousProxy && MovementComponent)
+		FGoKartMove LastMove = MovementComponent->GetLastMove();
+		if (Owner->Role == ROLE_AutonomousProxy)
 		{
-			FGoKartMove Move = MovementComponent->CreateMove(DeltaTime);
-			MovementComponent->SimulateMove(Move);
-
-			UnacknowledgedMoves.Add(Move);
-			Server_SendMove(Move);
+			
+			UnacknowledgedMoves.Add(LastMove);
+			Server_SendMove(LastMove);
 		}
 
 		// We are the server and in control of the pawn
-		if (Owner->Role == ROLE_Authority && Owner->GetRemoteRole() == ROLE_SimulatedProxy && MovementComponent)
+		if (Owner->GetRemoteRole() == ROLE_SimulatedProxy)
 		{
-			FGoKartMove Move = MovementComponent->CreateMove(DeltaTime);
-			Server_SendMove(Move);
+			UpdateServerState(LastMove);
 		}
 
-		if (Owner->Role == ROLE_SimulatedProxy && MovementComponent)
+		if (Owner->Role == ROLE_SimulatedProxy)
 		{
-			MovementComponent->SimulateMove(ServerState.LastMove);
+			MovementComponent->SetLastMove(ServerState.LastMove);
 		}
 	}
+}
+
+void UGoKartMovementReplicator::UpdateServerState(const FGoKartMove& Move)
+{
+	AActor* Owner = GetOwner();
+	ServerState.LastMove = Move;
+	ServerState.Transform = Owner->GetActorTransform();
+	ServerState.Velocity = MovementComponent->GetVelocity();
 }
 
 void UGoKartMovementReplicator::Server_SendMove_Implementation(const FGoKartMove& Move)
@@ -61,10 +65,7 @@ void UGoKartMovementReplicator::Server_SendMove_Implementation(const FGoKartMove
 	if (Owner && MovementComponent)
 	{
 		MovementComponent->SimulateMove(Move);
-
-		ServerState.LastMove = Move;
-		ServerState.Transform = Owner->GetActorTransform();
-		ServerState.Velocity = MovementComponent->GetVelocity();
+		UpdateServerState(Move);
 	}
 }
 

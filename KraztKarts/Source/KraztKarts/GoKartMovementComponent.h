@@ -31,6 +31,8 @@ class KRAZTKARTS_API UGoKartMovementComponent : public UActorComponent
 
 
 private:
+	FGoKartMove LastMove;
+
 	FVector Velocity;
 
 	float Throttle;
@@ -61,12 +63,24 @@ public:
 	// Sets default values for this component's properties
 	UGoKartMovementComponent();
 
-	FGoKartMove CreateMove(float DeltaTime);
-
 	void SimulateMove(const FGoKartMove& Move);
 
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+
+	void SetThrottle(float Val);
+
+	void SetSteeringThrow(float Val);
+
+	FVector GetVelocity();
+
+	float GetMinTurningRadius();
+
+	void SetVelocity(FVector Velocity);
+
+	FGoKartMove GetLastMove();
+
+	void SetLastMove(FGoKartMove LastMove);
 
 protected:
 	// Called when the game starts
@@ -83,10 +97,5 @@ private:
 
 	void UpdateLocationFromVelocity(float DeltaTime);
 
-public:
-	void SetThrottle(float Val);
-	void SetSteeringThrow(float Val);
-	FVector GetVelocity();
-	float GetMinTurningRadius();
-	void SetVelocity(FVector Velocity);
+	FGoKartMove CreateMove(float DeltaTime);
 };
