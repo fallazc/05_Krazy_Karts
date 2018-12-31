@@ -37,7 +37,12 @@ private:
 	UPROPERTY()
 	UGoKartMovementComponent* MovementComponent;
 
-	void UpdateServerState(const FGoKartMove& Move);
+	float ClientTimeSinceUpdate = 0.f;
+
+	float CLientTimeBetweenLastUpdate = 0.f;
+
+	FTransform ClientStartTransform;
+
 public:
 	// Sets default values for this component's properties
 	UGoKartMovementReplicator();
@@ -57,4 +62,12 @@ private:
 
 	UFUNCTION()
 	void OnRep_ServerState();
+
+	void SimulatedProxy_OnRep_ServerState();
+
+	void AutonomousProxy_OnRep_ServerState();
+
+	void ClientTick(float DeltaTime);
+
+	void UpdateServerState(const FGoKartMove& Move);
 };

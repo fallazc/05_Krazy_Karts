@@ -14,6 +14,7 @@ AGoKart::AGoKart()
 	MovementComponent = CreateDefaultSubobject<UGoKartMovementComponent>(FName("Movement Component"));
 	MovementReplicator = CreateDefaultSubobject<UGoKartMovementReplicator>(FName("Movement Replicator"));
 	bReplicates = true;
+	bReplicateMovement = false;
 }
 
 // Called when the game starts or when spawned

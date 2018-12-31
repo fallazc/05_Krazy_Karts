@@ -33,7 +33,6 @@ void UGoKartMovementReplicator::TickComponent(float DeltaTime, ELevelTick TickTy
 		FGoKartMove LastMove = MovementComponent->GetLastMove();
 		if (Owner->Role == ROLE_AutonomousProxy)
 		{
-			
 			UnacknowledgedMoves.Add(LastMove);
 			Server_SendMove(LastMove);
 		}
@@ -46,7 +45,7 @@ void UGoKartMovementReplicator::TickComponent(float DeltaTime, ELevelTick TickTy
 
 		if (Owner->Role == ROLE_SimulatedProxy)
 		{
-			MovementComponent->SetLastMove(ServerState.LastMove);
+			ClientTick(DeltaTime);
 		}
 	}
 }
@@ -90,6 +89,28 @@ void UGoKartMovementReplicator::ClearAcknowledgedMoves(const FGoKartMove& LastMo
 
 void UGoKartMovementReplicator::OnRep_ServerState()
 {
+	switch (GetOwnerRole())
+	{
+	case ROLE_AutonomousProxy:
+		AutonomousProxy_OnRep_ServerState();
+		break;
+	case ROLE_SimulatedProxy:
+		SimulatedProxy_OnRep_ServerState();
+		break;
+	default:
+		break;
+	}
+}
+
+void UGoKartMovementReplicator::SimulatedProxy_OnRep_ServerState()
+{
+	CLientTimeBetweenLastUpdate = ClientTimeSinceUpdate;
+	ClientTimeSinceUpdate = 0;
+	ClientStartTransform = GetOwner()->GetActorTransform();
+}
+
+void UGoKartMovementReplicator::AutonomousProxy_OnRep_ServerState()
+{
 	AActor* Owner = GetOwner();
 	if (Owner)
 	{
@@ -104,6 +125,26 @@ void UGoKartMovementReplicator::OnRep_ServerState()
 				MovementComponent->SimulateMove(Move);
 			}
 		}
+	}
+}
+
+void UGoKartMovementReplicator::ClientTick(float DeltaTime)
+{
+	ClientTimeSinceUpdate += DeltaTime;
+	if (CLientTimeBetweenLastUpdate > KINDA_SMALL_NUMBER)
+	{
+		AActor* Owner = GetOwner();
+
+		FVector TargetLocation = ServerState.Transform.GetLocation();
+		float LerpRatio = ClientTimeSinceUpdate / CLientTimeBetweenLastUpdate;
+		FVector StartLocation = ClientStartTransform.GetLocation();
+		FVector NewLocation = FMath::LerpStable(StartLocation, TargetLocation, LerpRatio);
+		Owner->SetActorLocation(NewLocation);
+
+		FQuat TargetRotation = ServerState.Transform.GetRotation();
+		FQuat StartRotation = ClientStartTransform.GetRotation();
+		FQuat NewRotation = FQuat::Slerp(StartRotation, TargetRotation, LerpRatio);
+		Owner->SetActorRotation(NewRotation);
 	}
 }
 
